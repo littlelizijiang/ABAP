@@ -1,0 +1,20 @@
+"三种类型变量
+"静态变量 Static Variables
+"参考变量 Reference Variables
+"系统变量 System Variables 
+
+"静态变量在子程序、函数模块和静态方法中声明
+"PARAMETERS语句用于声明选择屏幕上的输入变量
+"示例
+REPORT ZTest123_01. 
+PARAMETERS: NAME(10) TYPE C, 
+CLASS TYPE I, 
+SCORE TYPE P DECIMALS 2, 
+CONNECT TYPE MARA-MATNR.
+
+"CONSTANTS用于声明常量
+"示例
+REPORT ZTEST. 
+CONSTANTS PQR TYPE P DECIMALS 4 VALUE '1.2356'. 
+Write: / 'The value of PQR is:', PQR.
+
