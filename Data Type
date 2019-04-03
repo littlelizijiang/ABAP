@@ -1,8 +1,55 @@
-"C 文本型 
-"N 数字文本型
+"C 文本型 default 1个字符
+"N 数字文本型 default 1个字符
 "I 整数型
-"D 日期型
-"P 数值型
+"D 日期型 YYYYMMDD 
+"P 数值型 default 无小数位（decimals）
 "F 浮点型
-"T 时间文本型
+"T 时间型 HHMMSS 
 "STRING 文本字符串
+"TIMESTAMP 短时间戳
+"TIMESTAMPL 长时间戳
+
+"字符串的常规处理
+
+"STRLEN 获取字符串长度
+"示例
+REPORT ZTEST.
+DATA: my_char(10) VALUE 'Hello',
+      length TYPE i.
+      
+length = STRLEN( my_char ).
+
+WRITE: my_char, length.
+
+"CONCATENATE 两个字符串连接形成第三个字符串。
+"示例
+REPORT ZTEST.
+DATA: char1(3) VALUE 'abc',
+      char2(3) VALUE 'def',
+      char3(10) TYPE c.
+
+CONCATENATE char1 char2 INTO char3.
+
+WRITE char3.
+
+"CONDENSE 删除空格字符
+"示例
+DATA: char1(10) TYPE c VALUE 'Hello',
+      char2(10) TYPE c VALUE 'World',
+      char3(30) TYPE c VALUE 'Hello    World  '.
+
+CONDENSE char3 [NO-GAPS]. "no-gaps删除字符串之间的空格
+
+WRITE char3.
+
+"sep 字段之间插入空格
+DATA: char1(10) TYPE c VALUE 'Hello',
+      char2(10) TYPE c VALUE 'World',
+      char3(30) TYPE c VALUE 'Hello    World  ',
+      sep,
+      char4(30) TYPE c.
+
+CONCATENATE char1 char2 INTO char4 SEPARATED BY sep.
+
+WRITE char4.
+
