@@ -1,1 +1,34 @@
-parameters
+"ABAP源程序由注释和ABAP语句组成。 
+"ABAP中的每个语句都以关键字开头，以句点结尾，ABAP不区分大小写。
+"程序中的第一个非注释行以单词REPORT开头。
+
+"如果每个语句的开头是相同的，则连续语句可以链接在一起。
+"这是使用冒号(:)运算符和逗号，用于终止单个语句，就像句点结束正常语句。
+
+"以下为代码示例
+REPORT ZTEST.
+WRITE 'Hello World'.
+
+"以下代码示例，消除数字文本的前导0,
+REPORT ZTEST.
+DATA: NUM(10) TYPE N VALUE 10.
+WRITE NUM NO-ZERO.
+
+"SKIP命令有助于在页面上插入空行。
+REPORT ZTEST.
+DATA: NUM(10) TYPE N VALUE 10.
+WRITE NUM NO-ZERO.
+SKIP.
+WRITE NUM NO-ZERO.
+
+"SKIP [number_of_lines] 插入多个空行
+REPORT ZTEST.
+DATA: NUM(10) TYPE N VALUE 10.
+WRITE NUM NO-ZERO.
+SKIP 6.
+WRITE NUM NO-ZERO.
+
+"SKIP TO LINE [number_of_lines] 跳到第几行
+
+"ULINE命令自动在输出插入一条水平线。 也可以控制线的位置和长度。
+ULINE.
