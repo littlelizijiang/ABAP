@@ -25,4 +25,29 @@ ENDFORM.                    "subtest
 "宏可用于长计算或用于编写复杂的WRITE语句.
 "能在定义它的程序中使用宏, 宏定义应在程序中使用宏之前发生。
 "定义宏示例
+DEFINE mac_test.
+  WRITE 'This is Marco &1'.
+END-OF-DEFINITION.
 
+PARAMETERS: s1 TYPE c AS CHECKBOX.
+PARAMETERS: s2 TYPE c AS CHECKBOX.
+PARAMETERS: s3 TYPE c AS CHECKBOX DEFAULT 'X'.
+
+START-OF-SELECTION.
+
+  IF s1 = 'X'.
+    mac_test 1.
+  ENDIF.
+
+  IF s2 = 'X'.
+    mac_test 2.
+  ENDIF.
+
+  IF s3 = 'X'.
+    mac_test 3.
+  ENDIF.
+
+"功能模块
+"包含一组具有导入和导出参数的可重用语句的子程序。
+
+"
