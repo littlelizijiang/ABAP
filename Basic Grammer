@@ -32,3 +32,31 @@ WRITE NUM NO-ZERO.
 
 "ULINE命令自动在输出插入一条水平线。 也可以控制线的位置和长度。
 ULINE.
+
+"运算符
+"算术运算符 + - * / MOD
+"比较运算符 =[EQ] <>[NE] >[GT] <[LT] >=[GE] <=[LE] BETWEEN AND IS INITIAL IS NOT INITIAL
+"示例
+DATA: a TYPE i VALUE 45,
+      b TYPE i VALUE 89.
+IF a LE b.
+  WRITE 'a is less than b'.
+ENDIF.
+
+"字符串运算符
+"CO 仅包含 检查A是否仅由B中的字符组成。CONTAINS ONLY
+"CN 检查A是否包含不在B中的字符。 CONTAINS NONE
+"CA 检查A是否至少包含一个字符B. CONTAINS ANY
+"NA 检查A是否不包含任何字符B. NOT ANY
+"CS 检查A是否包含字符串B. CONTAINS STRING
+"NS 检查A是否不包含字符串B.
+"CP 它检查A是否包含B中的模式。
+"NP 它检查A是否不包含B中的模式。
+"示例
+REPORT YS_SEP_08. 
+DATA: P(10) TYPE C VALUE 'APPLE',
+      Q(10) TYPE C VALUE 'CHAIR'.
+      IF P CA Q.
+	
+      WRITE: / 'P contains at least one character of Q'.
+      ENDIF.
