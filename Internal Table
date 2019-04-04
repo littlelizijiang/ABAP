@@ -1,4 +1,97 @@
 "Open SQL
 "Insert 用于将工作区和它保存的记录插入到表中。
 "示例
+REPORT ztest_001.
 
+DATA wa_zsflight LIKE zsflight.
+wa_zsflight-mandt = '300'.
+wa_zsflight-carrid = 'AC'.
+wa_zsflight-connid = '0820'.
+wa_zsflight-fldate = '2000.01.01'.
+
+INSERT zsflight FROM wa_zsflight.
+
+"Update 同时更新表中的一个或多个现有记录。
+REPORT ztest_001.
+
+DATA wa_zsflight LIKE zsflight.
+wa_zsflight-mandt = '300'.
+wa_zsflight-carrid = 'AC'.
+wa_zsflight-connid = '0820'.
+wa_zsflight-fldate = '2000.01.01'.
+wa_zsflight-price = '3500.00'.
+wa_zsflight-currency = 'CNY'.
+
+*INSERT zsflight FROM wa_zsflight.
+UPDATE zsflight FROM wa_zsflight.
+
+"Modify INSERT和UPDATE语句的组合，用于插入新记录或修改现有记录。
+REPORT ztest_001.
+
+DATA wa_zsflight LIKE zsflight.
+wa_zsflight-mandt = '300'.
+wa_zsflight-carrid = 'AC'.
+wa_zsflight-connid = '0820'.
+wa_zsflight-fldate = '2000.01.01'.
+wa_zsflight-price = '3500.00'.
+wa_zsflight-currency = 'cny'.
+
+*INSERT zsflight FROM wa_zsflight.
+*UPDATE zsflight FROM wa_zsflight.
+MODIFY zsflight FROM wa_zsflight.
+
+"内表 临时表 仅在SAP程序的运行时期间存在
+"定义内表的三种方法
+"示例1 声明 默认带有标题行
+REPORT ztest_001.
+TABLES:zsflight.
+
+DATA: BEGIN OF itab OCCURS 0,
+        carrid LIKE zsflight-carrid,
+        connid LIKE zsflight-connid,
+      END OF itab.
+"示例2 声明 默认带有标题行
+REPORT ztest_001.
+*TABLES:zsflight.
+*
+*DATA: BEGIN OF itab OCCURS 0,
+*        carrid LIKE zsflight-carrid,
+*        connid LIKE zsflight-connid,
+*      END OF itab.
+
+TYPES: BEGIN OF itab,
+         carrid(2) TYPE c,
+         connid(4) TYPE c,
+       END OF itab.
+       
+"示例3 参照DB表或工作区，需要声明是否带标题行，默认没有标题行
+REPORT ztest_001.
+TABLES:zsflight.
+DATA: itab type STANDARD TABLE OF zsflight WITH HEADER LINE.
+
+"APPEND 用于向现有内部表添加单个行或行
+"示例
+APPEND <record_for_itab> TO <internal_tab>.
+
+"Move 使用MOVE语句将数据从一个表的字段移动到另一个表的字段。
+"示例
+REPORT ztest_001.
+
+TABLES:zsflight.
+
+DATA: BEGIN OF itab OCCURS 0,
+        carrid LIKE zsflight-carrid,
+        connid LIKE zsflight-connid,
+      END OF itab.
+
+SELECT * FROM zsflight.
+  MOVE-CORRESPONDING zsflight TO itab.
+  APPEND itab.
+ENDSELECT.
+
+LOOP AT itab.
+  WRITE: / itab-carrid, itab-connid.
+ENDLOOP.
+
+
+       
