@@ -50,4 +50,11 @@ START-OF-SELECTION.
 "功能模块
 "包含一组具有导入和导出参数的可重用语句的子程序。
 
-"
+"Include程序
+"先创建类型为Include的程序，再通过其他程序调用
+"示例
+REPORT Z_TEST.  
+INCLUDE Z_TOBEINCLUDED.
+
+"Include程序和功能模块的区别： 功能模块可以独立执行，Include程序只能再程序中执行
+
