@@ -1,1 +1,73 @@
+"一张简单的查询报表
+"示例
+REPORT ztest_001
+
+LINE-SIZE 75
+
+LINE-COUNT 30(3)
+
+NO STANDARD PAGE HEADING.
+
+TABLES: sflight.
+
+*define data structure
+TYPES: BEGIN OF itab,
+         carrid TYPE sflight-carrid,
+         connid TYPE sflight-connid,
+         fldate TYPE sflight-fldate,
+         price  TYPE sflight-price,
+       END OF itab.
+
+*define work area and internal table
+DATA: wa_ma TYPE itab,
+      it_ma TYPE STANDARD TABLE OF itab.
+
+*select-option part
+
+SELECT-OPTIONS: price FOR sflight-price. "该语句会生成一个名为price选择条件内表
+
+INITIALIZATION.
+  price-low = '200'.
+  price-high = '10000'.
+
+  APPEND price.
+
+AT SELECTION-SCREEN.
+  IF price-low = ''.
+    MESSAGE i000(zsfmessage).
+  ELSEIF price-high = ''.
+    MESSAGE i001(zsfmessage).
+  ENDIF.
+
+TOP-OF-PAGE. "由第一条WRITE语句触发以在新页面上显示数据。
+  WRITE: / 'This is a test' COLOR 7.
+  ULINE.
+  WRITE: / 'carrid' COLOR 1,
+
+  24 'connid' COLOR 2,
+  38 'fldate' COLOR 3,
+  53 'price' COLOR 4.
+
+  ULINE.
+
+END-OF-PAGE. "触发以在报表的页面末尾显示文本。 请注意，此事件是创建报告时的最后一个事件，应与REPORT语句的LINE-COUNT子句结合使用。
+
+START-OF-SELECTION. "仅在选择屏幕的处理结束后触发; 即当用户点击选择屏幕上的执行图标时。
+  SELECT carrid connid fldate price FROM sflight
+    INTO TABLE it_ma WHERE price IN price.
+  LOOP AT  it_ma INTO wa_ma.
+    WRITE: / wa_ma-carrid,
+    25 wa_ma-connid,
+    40 wa_ma-fldate,
+    55 wa_ma-price.
+  ENDLOOP.
+
+END-OF-SELECTION. "在执行START-OF-SELECTION事件中的最后一条语句之后触发。
+
+  ULINE.
+  WRITE: / 'This is a test'.
+  ULINE.
+  SKIP.
+  
+"select-options 与 parameters的区别
 
