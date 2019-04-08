@@ -70,4 +70,7 @@ END-OF-SELECTION. "在执行START-OF-SELECTION事件中的最后一条语句之�
   SKIP.
   
 "select-options 与 parameters的区别
+"select-options可以选择操作符,即使都不填输入项，代表查询所有
+"parameters 没有输入，代表查询条件为空，结果也为空
+
 
