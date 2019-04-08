@@ -93,5 +93,14 @@ LOOP AT itab.
   WRITE: / itab-carrid, itab-connid.
 ENDLOOP.
 
+"Move 和 Move-corresponding
+"MOVE <table_field> TO <internal_tab_field>.
+"MOVE-CORRESPONDING <table_name> TO <internal_tab>. 
+
+"Read table的用法
+"READ TABLE <internal_table> FROM <work_area_itab>.
+"READ TABLE <internal_table> WITH KEY = <internal_tab_field>.
+"READ TABLE <internal_table> <key> INTO <work_area_itab> [COMPARING <F1> <F2>...<Fn>].
+
 
        
