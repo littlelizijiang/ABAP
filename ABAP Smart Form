@@ -1,7 +1,21 @@
-"Smart Form 三步骤
-"1.设置表格接口，就是指定该form显示哪个数据库的数据
-"2.设计报表头（也可以没有），就是表单的上部分，一般用来放公司logo、日期、页数这些信息
-"3.设计主窗口，也就是表单显示数据的部分，主要工作就是设计表的列名和列名下面对应的表的字段。程序调用时会先在数据库中取数，然后填充到form
+"Smart Form 实例分析
 
-"T-CODE:SMARTFORMS
-"
+"实例一
+"T-CODE: SMARTFORMS
+"路径：Global Settings-Global Definitions-Types  
+"代码如下：
+"TYPES: BEGIN OF typ_flight,
+         carrid   TYPE sflight-carrid,
+         connid   TYPE sflight-connid,
+         fldate   TYPE sflight-fldate,
+         price    TYPE sflight-price,
+         currency TYPE sflight-currency,
+       END OF typ_flight.
+ "路径：Global Settings-Global Definitions-Global Data
+ "Variable Name  Typing           Associated Type
+ "ITAB           TYPE TABLE OF    TYP_FLIGHT
+ "WA             TYPE             TYP_FLIGHT
+ 
+ "路径：Pages and Windows-%PAGE1-MAIN
+ "右击新增ITEM
+"ABAP调用主程序
