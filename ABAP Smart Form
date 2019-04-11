@@ -18,4 +18,86 @@
  
  "路径：Pages and Windows-%PAGE1-MAIN
  "右击新增ITEM
+ "ITEM-TABLE-Details 设置Line Type 主要用于设定表格中的列数、列宽等
+ "ITEM-Data-LOOP下面  添加ITAB INTO WA
+ "分别右击Header Main Area 添加New Line 选择Line Type 添加相应的抬头名、字段数据
+ "右击new line添加新列 
+ "所有与表格相关的设置都在这个T-CODE内进行
+ "再根据表单格式需求，添加不同的窗口，并进行相应调整,激活sm
+ 
 "ABAP调用主程序
+"代码示例
+*&---------------------------------------------------------------------*
+*& Report ZSM_FM_TEST001
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zsm_fm_test001.
+
+DATA: BEGIN OF itab OCCURS 0,
+        carrid   TYPE sflight-carrid,
+        connid   TYPE sflight-connid,
+        fldate   TYPE sflight-fldate,
+        price    TYPE sflight-price,
+        currency TYPE sflight-currency,
+      END OF itab.
+
+START-OF-SELECTION.
+  PERFORM frm_get_data.
+  PERFORM frm_print_data.
+
+*&---------------------------------------------------------------------*
+*&      Form  frm_get_data
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM frm_get_data.
+*  DO 20 TIMES.
+*    itab-carrid = itab-carrid + 1.
+*    itab-connid = itab-connid + 2.
+*    itab-fldate = itab-fldate + 3.
+*    itab-price = itab-price + 4.
+*    itab-currency = itab-currency + 4.
+*    APPEND itab.
+SELECT *
+  INTO CORRESPONDING FIELDS OF TABLE itab
+  FROM sflight.
+*  ENDDO.
+ENDFORM.                "frm_get_data
+
+*&---------------------------------------------------------------------*
+*&      Form  frm_print_data
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+FORM frm_print_data.
+  DATA: /1bcdwb/sf00000004 TYPE rs38l_fnam.
+
+  CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'
+    EXPORTING
+      formname           = 'ZS_FLIGHT'
+    IMPORTING
+      fm_name            = /1bcdwb/sf00000004
+    EXCEPTIONS
+      no_form            = 1
+      no_function_module = 2
+      OTHERS             = 3.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+  CALL FUNCTION /1bcdwb/sf00000004
+    EXCEPTIONS
+      formatting_error = 1
+      internal_error   = 2
+      send_error       = 3
+      user_canceled    = 4
+      OTHERS           = 5.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+ENDFORM.
+
+"实例二
