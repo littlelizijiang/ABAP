@@ -73,4 +73,15 @@ END-OF-SELECTION. "在执行START-OF-SELECTION事件中的最后一条语句之�
 "select-options可以选择操作符,即使都不填输入项，代表查询所有
 "parameters 没有输入，代表查询条件为空，结果也为空
 
+"报表开发实例一
+"需求分析
+"报表字段如下：
+"CARRID  CONNID   FLDATE   BOOKID   CUSTOMID   LUGGWEIGHT   CLASS    ORDER_DATE --SBOOK
+"PLANETYPE  SEATSMAXN --SFLIGHT
+"CITYFROM   CITYTO --SPFLI
+"NAME    TELEPHONE --SCUSTOM
+
+"表关联
+"省略
+"
 
