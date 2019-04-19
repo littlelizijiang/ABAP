@@ -13,4 +13,623 @@
          FUNCTION 'REUSE_ALV_GRID_DISPLAY'  *用来显示表单数据
          FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'  *用来显示表单标题
          
+ "ALV实例
+*&---------------------------------------------------------------------*
+*& Report  YTEST_0416
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ytest_0416
+       NO STANDARD PAGE HEADING
+       LINE-SIZE 200
+       LINE-COUNT 65
+       MESSAGE-ID zz.
+
+*--------------------------------
+* Tables
+*--------------------------------
+TABLES:
+  ekpo,
+  mara,
+  trdir.
+*--------------------------------
+* Global Types
+*--------------------------------
+TYPE-POOLS: slis.
+*--------------------------------
+* Global Internal Tables
+*--------------------------------
+DATA:
+  i_fieldcat_alv  TYPE slis_t_fieldcat_alv,
+  i_events        TYPE slis_t_event,
+  i_event_exit    TYPE slis_t_event_exit,
+  i_list_comments TYPE slis_t_listheader,
+  i_excluding     TYPE slis_t_extab.
+
+* Display data
+DATA: BEGIN OF i_data OCCURS 0,
+          matnr LIKE mara-matnr,
+          mtart LIKE mara-mtart,
+      END OF i_data.
+
+*--------------------------------
+* Global Variables
+*--------------------------------
+DATA:
+  w_variant          LIKE disvariant,  "显示变式结构
+  wx_variant         LIKE disvariant,
+  w_variant_save(1)  TYPE c,
+  w_exit(1)          TYPE c,
+  w_repid            LIKE sy-repid,  "abap程序，当前主程序
+  w_user_specific(1) TYPE c,
+  w_callback_ucomm   TYPE slis_formname,   "字符型
+  w_print            TYPE slis_print_alv,  "类型组
+  w_layout           TYPE slis_layout_alv, "类型组
+  w_html_top_of_page TYPE  slis_formname,  "字符型
+  w_fieldcat_alv     LIKE LINE OF i_fieldcat_alv,
+  w_excluding        LIKE LINE OF i_excluding,
+  w_events           LIKE LINE OF i_events,
+  w_event_exit       LIKE LINE OF i_event_exit,
+  w_list_comments    LIKE LINE OF i_list_comments.
+
+*--------------------------------
+* Global Constants
+*--------------------------------
+*constants:
+
+*--------------------------------
+* Selection Screen
+*--------------------------------
+SELECTION-SCREEN BEGIN OF BLOCK blk_criteria WITH FRAME TITLE text-f01.
+SELECT-OPTIONS:
+  s_name FOR trdir-name.                 "程序名
+SELECTION-SCREEN END OF BLOCK blk_criteria.
+
+SELECTION-SCREEN BEGIN OF BLOCK blk_params WITH FRAME TITLE text-f02.
+PARAMETERS:
+  p_vari LIKE disvariant-variant.    "格式
+SELECTION-SCREEN SKIP 1.
+PARAMETERS:
+  p_grid RADIOBUTTON GROUP rb01 DEFAULT 'X',
+  p_html AS CHECKBOX.
+SELECTION-SCREEN SKIP 1.
+PARAMETERS:
+  p_list RADIOBUTTON GROUP rb01.
+SELECTION-SCREEN END OF BLOCK blk_params.
+
+*--------------------------------
+* Initialization
+*--------------------------------
+INITIALIZATION.
+  PERFORM init_variant.   "初始化
+  PERFORM variant_default USING p_vari.
+
+  CLEAR: s_name[].
+  s_name-sign   = 'I'.
+  s_name-option = 'CP'.
+  s_name-low    = 'Z*'.
+  APPEND s_name.
+
+*--------------------------------
+* At Selection Screen PBO
+*--------------------------------
+AT SELECTION-SCREEN OUTPUT.
+
+*----------------------------------
+* At Selection Screen Value Request
+*----------------------------------
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_vari.
+  PERFORM variant_f4 USING p_vari.  "不管
+
+*--------------------------------
+* At Selection Screen
+*--------------------------------
+AT SELECTION-SCREEN.
+  PERFORM variant_fill.   "不管
+
+*--------------------------------
+* Start of Selection
+*--------------------------------
+START-OF-SELECTION.
+  PERFORM get_data.  "从表mara中取相应字段到i_data
+
+END-OF-SELECTION.
+  PERFORM fieldcat_build.
+  PERFORM event_build.
+  PERFORM event_exit_build.
+  PERFORM exclude_build.
+  PERFORM print_build.
+  PERFORM layout_build.
+  PERFORM display_data.
+
+*--------------------------------
+* Top of Page
+*--------------------------------
+TOP-OF-PAGE.
+
+*--------------------------------
+* Top of Page During Line Sel
+*--------------------------------
+TOP-OF-PAGE DURING LINE-SELECTION.
+
+*--------------------------------
+* At User Command
+*--------------------------------
+AT USER-COMMAND.
+*--------------------------------
+* At Line Selection
+*--------------------------------
+AT LINE-SELECTION.
+
+*--------------------------------
+* Macros
+*--------------------------------
+  DEFINE skip_1.
+    write: /001 sy-vline,
+                at sy-linsz sy-vline.
+  END-OF-DEFINITION.
+
+*----------------------------------------------------------------------
+*                                 Forms
+*----------------------------------------------------------------------
+*&---------------------------------------------------------------------*
+*&      Form  variant_f4
+*&---------------------------------------------------------------------*
+FORM variant_f4 USING p_variant.
+
+  CALL FUNCTION 'LVC_VARIANT_F4'
+    EXPORTING
+      is_variant    = w_variant
+      i_save        = w_variant_save
+    IMPORTING
+      e_exit        = w_exit
+      es_variant    = wx_variant
+    EXCEPTIONS
+      not_found     = 1
+      program_error = 2
+      OTHERS        = 3.
+
+  IF sy-subrc <> 0.
+    MESSAGE i000(zz) WITH text-g01.
+  ENDIF.
+
+  IF w_exit IS INITIAL.
+    w_variant-variant = wx_variant-variant.
+    p_variant         = wx_variant-variant.
+  ENDIF.
+
+ENDFORM.                    "variant_f4
+*&---------------------------------------------------------------------*
+*&      Form  init_variant
+*&---------------------------------------------------------------------*
+FORM init_variant.
+
+  CLEAR: w_variant.
+  w_repid              = sy-repid.
+  w_variant-report     = w_repid.
+  w_variant-username   = sy-uname.
+  w_variant_save       = 'A'. "All types
+
+ENDFORM.                    "init_variant
+*&---------------------------------------------------------------------*
+*&      Form  variant_default
+*&---------------------------------------------------------------------*
+FORM variant_default USING p_variant.
+
+  wx_variant = w_variant.
+
+  IF NOT p_variant IS INITIAL.
+    wx_variant-variant = p_variant.
+  ENDIF.
+
+  CALL FUNCTION 'LVC_VARIANT_DEFAULT_GET'
+    EXPORTING
+      i_save        = w_variant_save
+    CHANGING
+      cs_variant    = wx_variant
+    EXCEPTIONS
+      wrong_input   = 1
+      not_found     = 2
+      program_error = 3
+      OTHERS        = 4.
+
+  CASE sy-subrc.
+    WHEN 0.
+      p_variant = wx_variant-variant.
+    WHEN 2.
+      CLEAR: p_variant.
+  ENDCASE.
+
+ENDFORM.                    "variant_default
+*&---------------------------------------------------------------------*
+*&      Form  variant_fill
+*&---------------------------------------------------------------------*
+FORM variant_fill.
+
+  CLEAR: w_variant.
+
+  IF p_vari IS INITIAL.
+    w_variant-variant = 'STANDARD'.
+    w_variant-report  = w_repid.
+  ELSE.
+
+    w_variant-variant = p_vari.
+    w_variant-report  = w_repid.
+
+    CALL FUNCTION 'LVC_VARIANT_EXISTENCE_CHECK'
+      EXPORTING
+        i_save     = w_variant_save
+      CHANGING
+        cs_variant = w_variant
+      EXCEPTIONS
+        OTHERS     = 01.
+    IF sy-subrc NE 0.
+      MESSAGE i000(zz) WITH text-g02.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.                    "variant_fill
+*&---------------------------------------------------------------------*
+*&      Form  fieldcat_build
+*&      函数定义时I_INTERNAL_TABNAME或I_STRUCTURE_NAME参数只需一项
+*&---------------------------------------------------------------------*
+FORM fieldcat_build.
+
+  CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE' *根据内表结构返回FIELDCAT字段结构信息
+    EXPORTING
+      i_program_name     = w_repid   *程序名
+*     i_structure_name   = 'TRDIR'   *直接参考数据字典中所定义的透明表或STRUCTURE名
+      i_internal_tabname = 'I_DATA'  *内表名称，必须为输出内表所自定义的STRUCTURE名
+      i_inclname         = w_repid   *
+    CHANGING
+      ct_fieldcat        = i_fieldcat_alv.  *导出FIELDCAT内表数据
+
+* Modify displayed fields
+  LOOP AT i_fieldcat_alv INTO w_fieldcat_alv.
+    CASE w_fieldcat_alv-fieldname.
+      WHEN 'NAME'.
+        w_fieldcat_alv-hotspot   = 'X'.
+      WHEN 'MYFIELD'.
+        w_fieldcat_alv-checkbox  = 'X'.
+        w_fieldcat_alv-seltext_s = 'MyChkBox'.
+      WHEN OTHERS.
+    ENDCASE.
+
+    MODIFY i_fieldcat_alv FROM w_fieldcat_alv.
+  ENDLOOP.
+
+ENDFORM.                    "fieldcat_build
+*&---------------------------------------------------------------------*
+*&      Form  display_data
+*&---------------------------------------------------------------------*
+FORM display_data.
+
+  w_callback_ucomm   = 'CALLBACK_UCOMM'.
+
+  CASE 'X'.
+    WHEN p_grid.
+      IF p_html = 'X'.
+        w_html_top_of_page = 'HTML_TOP_OF_PAGE'.
+      ENDIF.
+
+      CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'  * 输出ALV报表
+        EXPORTING
+          i_callback_program          = w_repid   * 程序名称
+          i_callback_html_top_of_page = w_html_top_of_page
+*         i_structure_name            = 'TRDIR'
+          i_default                   = 'X'
+          i_save                      = 'A'
+          is_variant                  = w_variant
+          is_layout                   = w_layout   *程序所定义的layout名称
+          i_callback_user_command     = w_callback_ucomm   *其对应值一般为子程序，在对ALV操作时触发所定义子程序（如某表字段的双击事件）
+          it_fieldcat                 = i_fieldcat_alv    *定义FIELDCAT数据
+          it_events                   = i_events        *定义ALV输出事件
+          it_event_exit               = i_event_exit
+          it_excluding                = i_excluding
+          is_print                    = w_print
+*         i_screen_start_column       = 1
+*         i_screen_start_line         = 1
+*         i_screen_end_column         = 70
+*         i_screen_end_line           = 30
+        TABLES
+          t_outtab                    = i_data.    *输入所需要显示的内表数据
+
+    WHEN p_list.
+      CALL FUNCTION 'REUSE_ALV_LIST_DISPLAY'
+        EXPORTING
+*         i_background_id         = 'ALV_BACKGROUND'
+          i_callback_program      = w_repid
+          i_default               = 'X'
+          i_save                  = 'A'
+          is_variant              = w_variant
+          is_layout               = w_layout
+          i_callback_user_command = w_callback_ucomm
+          it_fieldcat             = i_fieldcat_alv
+          it_events               = i_events
+          it_event_exit           = i_event_exit
+          is_print                = w_print
+        TABLES
+          t_outtab                = i_data.
+  ENDCASE.
+
+ENDFORM.                    "display_data
+*---------------------------------------------------------------------*
+*       FORM user_command                                             *
+*---------------------------------------------------------------------*
+FORM callback_ucomm  USING r_ucomm LIKE sy-ucomm
+                           rs_selfield TYPE slis_selfield.
+
+  MESSAGE i000(zz) WITH r_ucomm.
+
+  CASE r_ucomm.
+    WHEN '&IC1'.
+      SET PARAMETER ID 'RID' FIELD rs_selfield-value.
+      CALL TRANSACTION 'SE38'.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDFORM.                    "callback_ucomm
+*&---------------------------------------------------------------------*
+*&      Form  get_data
+*&---------------------------------------------------------------------*
+FORM get_data.
+
+  SELECT *  FROM mara
+         INTO CORRESPONDING FIELDS OF TABLE i_data.
+
+ENDFORM.                    "get_data
+*---------------------------------------------------------------------*
+*       FORM ALV_TOP_OF_PAGE                                          *
+*---------------------------------------------------------------------*
+FORM alv_top_of_page.
+
+  CLEAR: i_list_comments[].
+
+  w_list_comments-typ  = 'H'. "H=Header, S=Selection, A=Action
+  w_list_comments-key  = ''.
+  w_list_comments-info = 'Info 1'.
+  APPEND w_list_comments TO i_list_comments.
+
+  w_list_comments-typ  = 'A'. " H = Header, S = Selection, A = Action
+  w_list_comments-key  = ''.
+  w_list_comments-info = 'Begin of list'.
+  APPEND w_list_comments TO i_list_comments.
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      i_logo             = 'ENJOYSAP_LOGO'
+      it_list_commentary = i_list_comments.
+
+ENDFORM.                    "alv_top_of_page
+*&---------------------------------------------------------------------*
+*&      Form  event_build
+*&---------------------------------------------------------------------*
+FORM event_build.
+
+  CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+    EXPORTING
+      i_list_type = 0
+    IMPORTING
+      et_events   = i_events.
+
+  READ TABLE i_events
+       WITH KEY name = slis_ev_top_of_page
+       INTO w_events.
+  IF sy-subrc = 0.
+    MOVE 'ALV_TOP_OF_PAGE' TO w_events-form.
+    MODIFY i_events FROM w_events INDEX sy-tabix.
+  ENDIF.
+
+  READ TABLE i_events
+       WITH KEY name = slis_ev_end_of_list
+       INTO w_events.
+  IF sy-subrc = 0.
+    MOVE 'ALV_END_OF_LIST' TO w_events-form.
+    MODIFY i_events FROM w_events INDEX sy-tabix.
+  ENDIF.
+
+  READ TABLE i_events
+       WITH KEY name = slis_ev_end_of_page
+       INTO w_events.
+  IF sy-subrc = 0.
+    MOVE 'ALV_END_OF_PAGE' TO w_events-form.
+    MODIFY i_events FROM w_events INDEX sy-tabix.
+  ENDIF.
+
+ENDFORM.                    "event_build
+*---------------------------------------------------------------------*
+*       FORM alv_end_of_list                                          *
+*---------------------------------------------------------------------*
+FORM alv_end_of_list.
+
+  CLEAR: i_list_comments[].
+
+  w_list_comments-typ = 'A'. "H = Header, S = Selection, A = Action
+  w_list_comments-key = ''.
+  w_list_comments-info = 'End of list'.
+  APPEND w_list_comments TO i_list_comments.
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      it_list_commentary = i_list_comments
+      i_logo             = 'ZMYOBJECTKEY'
+      i_end_of_list_grid = 'X'.
+
+ENDFORM.                    "alv_end_of_list
+*---------------------------------------------------------------------*
+*       FORM alv_end_of_page                                          *
+*---------------------------------------------------------------------*
+FORM alv_end_of_page.
+
+ENDFORM.                    "alv_end_of_page
+*&---------------------------------------------------------------------*
+*&      Form  print_build
+*&---------------------------------------------------------------------*
+FORM print_build.
+
+  w_print-no_print_listinfos = 'X'.
+
+ENDFORM.                    "print_build
+*&---------------------------------------------------------------------*
+*&      Form  layout_build
+*&---------------------------------------------------------------------*
+FORM layout_build.
+
+  w_layout-zebra                = 'X'.
+  w_layout-no_vline             = 'X'. 
+  w_layout-colwidth_optimize    = 'X'.
+  w_layout-detail_popup         = 'X'.
+  w_layout-detail_initial_lines = 'X'.
+  w_layout-detail_titlebar      = 'Detail Title Bar'.
+
+ENDFORM.                    "layout_build
+*&---------------------------------------------------------------------*
+*&      Form  event_exit_build
+*&---------------------------------------------------------------------*
+FORM event_exit_build.
+
+  CLEAR: i_event_exit[].
+
+* Pick
+  w_event_exit-ucomm  = '&ETA'.
+  w_event_exit-before = ' '.
+  w_event_exit-after  = 'X'.
+  APPEND w_event_exit TO i_event_exit.
+
+ENDFORM.                    "event_exit_build
+*---------------------------------------------------------------------*
+*       FORM HTML_TOP_OF_PAGE                                         *
+*---------------------------------------------------------------------*
+FORM html_top_of_page USING r_top TYPE REF TO cl_dd_document.
+
+  DATA:
+    text     TYPE sdydo_text_element,
+    s_table  TYPE REF TO cl_dd_table_element,
+    col_key  TYPE REF TO cl_dd_area,
+    col_info TYPE REF TO cl_dd_area,
+    a_logo   TYPE REF TO cl_dd_area.
+
+* Split TOP-Document
+  CALL METHOD r_top->vertical_split
+    EXPORTING
+      split_area  = r_top
+      split_width = '30%'
+    IMPORTING
+      right_area  = a_logo.
+
+* Fill TOP-Document
+  CALL METHOD r_top->add_text
+    EXPORTING
+      text      = 'Example of a Heading'
+      sap_style = 'HEADING'.
+
+  CALL METHOD r_top->new_line.
+  CALL METHOD r_top->new_line.
+  CALL METHOD r_top->add_table
+    EXPORTING
+      no_of_columns = 2
+      with_heading  = ' '
+      border        = '1'
+    IMPORTING
+      table         = s_table.
+
+  CALL METHOD s_table->add_column
+    IMPORTING
+      column = col_key.
+  CALL METHOD s_table->add_column
+    IMPORTING
+      column = col_info.
+
+  text = 'A key value marked'.
+  CALL METHOD col_key->add_text
+    EXPORTING
+      text         = text
+      sap_emphasis = 'Strong'.
+
+  CALL METHOD col_info->add_gap
+    EXPORTING
+      width = 6.
+
+  text = '600' .
+  CALL METHOD col_info->add_text
+    EXPORTING
+      text      = text
+      sap_style = 'Key'.
+
+  CALL METHOD col_info->add_gap
+    EXPORTING
+      width = 3.
+
+  text = 'Block brick units'.
+  CALL METHOD col_info->add_text
+    EXPORTING
+      text = text.
+
+  CALL METHOD s_table->new_row.
+
+  text = 'Storage Bin'.
+  CALL METHOD col_key->add_text
+    EXPORTING
+      text         = text
+      sap_emphasis = 'Strong'.
+
+  CALL METHOD col_info->add_gap
+    EXPORTING
+      width = 7.
+
+  text = 'C-A-004'.
+  CALL METHOD col_info->add_text
+    EXPORTING
+      text = text.
+
+  CALL METHOD s_table->new_row.
+
+  text = 'Warehouse number' .
+  CALL METHOD col_key->add_text
+    EXPORTING
+      text         = text
+      sap_emphasis = 'Strong'.
+
+  CALL METHOD col_info->add_gap
+    EXPORTING
+      width = 6.
+
+  text = '200' .
+  CALL METHOD col_info->add_text
+    EXPORTING
+      text      = text
+      sap_style = 'Success'.
+
+  CALL METHOD col_info->add_gap
+    EXPORTING
+      width = 3.
+
+  text = 'marked success'.
+  CALL METHOD col_info->add_text
+    EXPORTING
+      text = text.
+
+  CALL METHOD s_table->new_row.
+
+  CALL METHOD r_top->new_line.
+  text = 'This last line is a comment in italics.'.
+  CALL METHOD r_top->add_text
+    EXPORTING
+      text         = text
+      sap_emphasis = 'EMPHASIS'.
+
+  CALL METHOD r_top->new_line.
+  CALL METHOD a_logo->add_picture
+*           exporting picture_id = 'ZZTESTBMP'.
+            EXPORTING picture_id = 'ENJOYSAP_LOGO'.
+
+ENDFORM.                    "html_top_of_page
+*&---------------------------------------------------------------------*
+*&      Form  exclude_build
+*&---------------------------------------------------------------------*
+FORM exclude_build.         
+ 
  
